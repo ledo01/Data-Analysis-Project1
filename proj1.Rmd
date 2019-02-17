@@ -1,0 +1,340 @@
+---
+title: "Projet 1"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+```{r include=FALSE}
+library(tidyverse);
+library(scales);
+library(lubridate);
+library(ggmap);
+library(ggplot2);
+library(sp);
+```
+
+
+## Exploring the dataset
+We were given the dataset *2016collision.csv*. If we inspect the file, we can see that we have 14023 observations of 13 variables. Some of those variable are categorical, but other are not, so we need to be carefull when we import the dataset so that R doesn't convert numerical variable into factor.
+
+```{r}
+df <- read.csv(file = '2016collisionsfinal.csv', header = T, stringsAsFactors = c(0,0,0,0,0,0,1,1,1,1,1,1,1))
+head(df)
+```
+And the name of the 13 variables are:
+```{r}
+colnames(df)
+```
+
+### The variables
+Here is a short interpretation of each variable:
+
+  - **Record**: a unique number, ranging from 1 to 14023, given to each observation.
+  - **Location**: the location, in the form of an address.
+  - **X,Y**: the longitude and latutide of the collision based on the Universal Transverse Mercator (UTM) coordinate system.
+  - **Date**: the date of the collision (in the format '%m/%d%y')
+  - **Time**: the time of the collision (in the format '%H:%M')
+  - **Environment**: a categorical variable that specifies the type of weather at the moment of the accident. It has levels:
+```{r}
+levels(df$Environment)  
+``` 
+Most of the levels are self-explanatory.
+  
+  - **Road_Surface**: a categorical variable that specify the condition of the road at the moment of the collision. It as levels:
+```{r}
+levels(df$Road_Surface)
+```
+
+  - **Traffic_Control**: a categorical variable that specifies the type of traffic control in place at the time of the accident. When we take a look at the levels of this variable, we can see that one is labeled *""* (i.e. a null string). Further inspection maybe required to determine if this is due to a missing value or if this is an actual level.
+```{r}
+levels(df$Traffic_Control)
+```
+
+  - **Collision_Location**: a categorical variable that specifies where the collision happened, but in terms of road types. We again got the label *""*, however we also have two labels for other road types: *"98 - Other"* and *"99 - Other"*. This is probably a data entry error, because all the other variables use the label *"99 - Other"*.
+```{r}
+levels(df$Collision_Location)
+```
+
+ - **Light**: a categorical variable that specify the amount of light (natural of artifical) at the moment of the collision. We again got the *""* label.
+```{r}
+levels(df$Light)
+```
+
+Since there are only two observations in the "" label, we may assume that these are missing values or a data entry errors.
+
+- **Collision_Classification**: a categorical variable with 3 levels:
+    - *01 - Fatal injury*: Implies that one or more person has decease due to the collision.
+    - *02 - Non-fatal injury*: Implies that one or more person got injured as a result of the collision, but no one died.
+    - *03 - P.D. only*: Implies that only some property damage was cause by the collision.
+    
+  - **Impact_type**: a categorical variable that specifies the type of impact for the collision. It has levels:
+```{r}
+levels(df$Impact_type)
+```
+### Simple plot of the categorical variables 
+
+#### Environement
+```{r}
+p <- ggplot(data = df, aes(x = df$Environment)) + geom_bar()
+show(p)
+```
+
+The labels are hard to read, rotating the plot migth be a good idea.
+```{r}
+p + coord_flip() + xlab("Environment") 
+```
+
+We can see that the most recorded collision has occurs in a clear environment. 
+
+### Road Surface
+
+We can do the same with the road surface
+
+```{r}
+p <- ggplot(data = df, aes(x=df$Road_Surface)) + geom_bar() + coord_flip() + xlab("Road Surface")
+show(p)
+```
+Accordingly to the result we got with the Environment variable, most collision happen on a dry surface.
+
+### Trafic Control
+```{r}
+p <- ggplot(df, aes(x = df$Traffic_Control)) + geom_bar() + coord_flip() + xlab("Traffic control")
+show(p)
+```
+In this plot, we can see that most collisin happen when there were no traffic control, but a lot of accident also happen at a traffic light or at a stop.
+
+### Collision Location
+```{r}
+p <- ggplot(df, aes(x = df$Collision_Location)) + geom_bar() + coord_flip() + xlab('Collision location')
+show(p)
+```
+
+### Light
+```{r}
+p <- ggplot(df, aes(x = df$Collision_Location)) + geom_bar() + coord_flip() + xlab('Collision location')
+show(p)
+```
+
+### Collision classification
+```{r}
+p <- ggplot(df, aes(x = df$Collision_Classification)) + geom_bar() + xlab("Collision classification")
+show(p)
+```
+
+### Impact Type
+```{r}
+p <- ggplot(df, aes(df$Impact_type)) + geom_bar() + coord_flip() + xlab("Impact type")
+show(p)
+```
+
+### Collision w.r.t the time of the day
+Since we have access to the time of the collision, one could ask at what time does most collision happen? 
+
+To do this, we need to convert the Time vector of string into something more usefull, such as a vector of datatime object. 
+```{r}
+df$Time <- as.POSIXct(df$Time, format = '%H:%M')
+plot_lim <- as.POSIXct(c('00:00','23:59'), format = '%H:%M')
+```
+
+```{r}
+p <- ggplot(data = df, aes(x = Time)) + geom_histogram(binwidth = 1000)
+show(p)
+```
+
+The fisrt thing to say about this plot is that it is very unlikely that a number this large of collision happen exactly at 00:00. This could indicate many thing but most likely that some entries are missing or ill formated.
+
+```{r}
+p + scale_x_datetime(limits =plot_lim, breaks=date_breaks("2 hours"), labels=date_format("%H:%M"))
+```
+While trying to fix the range and format of the x axis, for some reason, *geom_bar* automatically remove the missing value. But now, for some reason, the x axis limits goes from 5am to 4:59am the next day.
+
+### Colision along the year
+```{r}
+df$Date<-as.Date(df$Date,format="%m/%d/%Y")
+df$months<-month(df$Date)
+
+x<-c(replicate(12,0))
+
+for (i in 1:length(df$months)){
+    for(j in 1:12)
+        if(df$months[i]==j){
+            x[j]=x[j]+1
+        }
+    }
+
+y<-matrix(nrow=12,ncol=2)
+for (i in 1:12){
+    y[i,1]=i
+    y[i,2]=x[i]
+}
+
+plot(y[1,],y[2,])
+
+
+dataweekly<-week(df$Date)
+ datayearly<-year(df$Date)
+str(df)
+summary(df)
+hist(summary(df)[,5])
+```
+** In not sure why, but I can't run this code. I have made pretty much the same graph, but without doing database manipulations**
+```{r}
+p <- ggplot(df, aes(Date)) + geom_histogram(binwidth = 5)
+show(p)
+```
+
+```{r}
+p <- ggplot(df, aes(Date)) + geom_histogram(binwidth = 30) + scale_x_date(breaks = date_breaks("1 month"),labels = date_format("%m")) + facet_grid(df$Collision_Classification ~ ., scales = "free_y")
+show(p)
+```
+
+###Map Visualization
+
+Since this dataset represents collisions in Ottawa that happened in 2016, we can plot the collisions on a map, using the coordinates (variables X and Y) from the dataset; this way, we can observe spatial details of the collisions data. 
+
+Since the coordinates in the dataset were recorded according to the Modified Transverse Mercator coordinate system, we need to convert the coordinates to the latitude-longitude system since the Ottawa map is scaled according to the lat-long system.
+
+First, we have to determine if there are any missing coordinates, because the converting function doesn't work if there are missing values :
+
+```{r}
+
+df$X <- as.numeric(df$X)
+df$Y <- as.numeric(df$Y)
+
+#finding records with missing values (when in numeric form)
+
+for (i in 1:14023) {
+  if (is.na(df$X[i])) {
+    print(i)
+  }
+}
+```
+
+With a little bit more investigating, we see that the records with missing coordinates are actually entries in a different format.(ex: 356,762.29 instead of 356762.29) Therefore, we will manually input the correctly formated values for these entries:
+
+```{r}
+#manually change the format of entries with different formats 
+
+df[5150,3] <- "356762.29"
+df[5150,4] <- "5015593.96"
+
+df[5666,3] <- "365191.84"
+df[5666,4] <- "5011253.07"
+
+df[5942,3] <- "384542.73"
+df[5942,4] <- "5034620.66"
+
+df[5943,3] <- "384542.73"
+df[5943,4] <- "5034620.66"
+
+df[9238,3] <- "384661.88"
+df[9238,4] <- "5034144.30"
+
+df[12111,3] <- "356864.55"
+df[12111,4] <- "5015648.07"
+
+df[12290,3] <- "382197.79"
+df[12290,4] <- "5033332.03"
+
+df[13828,3] <- "356535.81"
+df[13828,4] <- "5015509.05"
+
+#change X and Y character to num again
+
+df$X <- as.numeric(df$X)
+df$Y <- as.numeric(df$Y)
+
+```
+
+Now, since we fixed the missing values, we can convert the coordinates to lat-long :
+
+```{r}
+#make variable of coords
+coords <- cbind(Easting = df[,3], Northing = df[,4])
+
+#make dataset without coords
+data_less_points <- df[,-(3:4)]
+
+#make data frame of spatial coords
+utms <- SpatialPointsDataFrame(coords, data = data_less_points, proj4string = CRS("+init=epsg:2018 +datum=NAD83"))
+
+#for conversion
+latlong = "+init=epsg:4269"
+
+#transforming mtms to lat-long
+gps_coords <- spTransform(utms, CRS(latlong))
+
+#making new data.frame with lat-long coords and all other variables
+data_with_lat.long <- data.frame(gps_coords)
+data_with_lat.long <- data_with_lat.long[,1:13]
+names(data_with_lat.long) <-c("Record", "Location", "Date", "Time", "Environment", "Road_Surface", "Traffic_Control", "Collision_Location", "Light", "Collision_Classification", "Impact_Type", "Longitude", "Latitude")
+
+```
+
+Finally, the coordinates are converted to the lat-long system :
+
+```{r}
+
+head(data_with_lat.long$Longitude)
+
+```
+
+Next, we can get map tiles of Ottawa from Stamen Maps. We can change the size of the maps to focus on different areas of the city: 
+
+(Map tiles by Stamen Design, under CC BY 3.0. Data by OpenStreetMap, under ODbL.)
+
+```{r message=FALSE, warning=TRUE}
+
+#getting tiles from Stamen
+
+ottawa.map <- get_stamenmap(bbox = c(left = -76.5, bottom = 45.0, right = -75.0, top = 45.8), zoom = 11, maptype = c("terrain-lines"), messaging = FALSE)
+
+ottawa.map2 <- get_stamenmap(bbox = c(left = -77.1384, bottom = 45.14344, right = -76.6394, top = 45.5506), zoom = 11, maptype = c("terrain-lines"), messaging = FALSE)
+
+ottawa.map3 <- get_stamenmap(bbox = c(left = -76.2384, bottom = 45.14344, right = -75.2, top = 45.5506), zoom = 11, maptype = c("terrain-lines"), messaging = FALSE)
+
+ottawa.map4 <- get_stamenmap(bbox = c(left = -76.3384, bottom = 45.0, right = -75.0, top = 45.5506), zoom = 11, maptype = c("terrain-lines"), messaging = FALSE)
+
+ottawa.map.zoom <- get_stamenmap(bbox = c(left = -75.8, bottom = 45.3, right = -75.6, top = 45.45), zoom = 13, maptype = c("terrain-lines"), messaging = FALSE, color="color")
+
+ottawa.map.zoomer <- get_stamenmap(bbox = c(left = -75.75, bottom = 45.38, right = -75.65, top = 45.44), zoom = 14, maptype = c("toner"), messaging = FALSE, color="color")
+
+```
+
+Finally, we are ready to plot the collisions on the map.  
+
+This is a broad view of the city, including the suburbs :
+
+```{r warning=FALSE}
+#broad view of Ottawa
+ggmap(ottawa.map)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude), size=0.5, col='blue') + scale_y_continuous(limits=c(45.0,45.55)) +
+  scale_x_continuous(limits=c(-76.4,-75.0)) + labs(x="Longitude", y="Latitude") + ggtitle("Vehicle Collisions in Ottawa, as of 2016")
+```
+
+We can see from the above plot that there are more collisions in the more populated areas of the city (downtown, Orleans, Barhaven, Kanata...) which is not really surprising. We may assume that, since there is a higher volume of vehicles on the road in more urban areas, there will be more accidents, compared to more rural areas.
+
+```{r}
+ggmap(ottawa.map)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Light), size=0.5) + scale_y_continuous(limits=c(45.0,45.55)) +
+  scale_x_continuous(limits=c(-76.4,-75.0)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Downtown Ottawa by Environment Type")
+
+#zoomed onto downtown core with colours being different environments (this one is cool!)
+ggmap(ottawa.map.zoomer)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, col=Environment), size=0.5) + scale_y_continuous(limits=c(45.38,45.44)) +
+  scale_x_continuous(limits=c(-75.75,-75.65)) + ggtitle("2016 Collisions in Downtown Ottawa by Environment Type") + labs(x="Longitude", y="Latitude")
+
+ggmap(ottawa.map.zoomer)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Traffic_Control), size=0.5) + scale_y_continuous(limits=c(45.38,45.44)) +
+  scale_x_continuous(limits=c(-75.75,-75.65)) + ggtitle("2016 Collisions in Downtown Ottawa by Environment Type") + labs(x="Longitude", y="Latitude")
+
+#data points on map and collision classification
+ggmap(ottawa.map4)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, col=Collision_Classification), size=0.5 ) +scale_y_continuous(limits=c(45.0,45.55)) + scale_x_continuous(limits=c(-76.2,-75.0)) + labs(x="Longitude", y="Latitude")
+
+ggmap(ottawa.map3)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude), size=0.5, col="blue") + scale_y_continuous(limits=c(45.15,45.55)) +
+  scale_x_continuous(limits=c(-76.0,-75.4)) + labs(x="Longitude", y="Latitude")
+
+#more zoom
+ggmap(ottawa.map3)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude), size=0.5, col="red") + scale_y_continuous(limits=c(45.15,45.55)) +
+  scale_x_continuous(limits=c(-76.0,-75.4)) + labs(x="Longitude", y="Latitude")+ labs(x="Longitude", y="Latitude")
+
+
+```
+
