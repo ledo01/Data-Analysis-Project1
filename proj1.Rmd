@@ -184,12 +184,9 @@ p <- ggplot(df, aes(Date)) + geom_histogram(binwidth = 5)
 show(p)
 ```
 
-```{r}
-p <- ggplot(df, aes(Date)) + geom_histogram(binwidth = 30) + scale_x_date(breaks = date_breaks("1 month"),labels = date_format("%m")) + facet_grid(df$Collision_Classification ~ ., scales = "free_y")
-show(p)
-```
 
-###Map Visualization
+
+### Map Visualization
 
 Since this dataset represents collisions in Ottawa that happened in 2016, we can plot the collisions on a map, using the coordinates (variables X and Y) from the dataset; this way, we can observe spatial details of the collisions data. 
 
@@ -286,7 +283,7 @@ Next, we can get map tiles of Ottawa from Stamen Maps. We can change the size of
 
 ```{r message=FALSE, warning=TRUE}
 
-#getting tiles from Stamen
+#getting tiles from Stamen and creating different maps
 
 ottawa.map <- get_stamenmap(bbox = c(left = -76.5, bottom = 45.0, right = -75.0, top = 45.8), zoom = 11, maptype = c("terrain-lines"), messaging = FALSE)
 
@@ -302,39 +299,175 @@ ottawa.map.zoomer <- get_stamenmap(bbox = c(left = -75.75, bottom = 45.38, right
 
 ```
 
+##Maps
+
 Finally, we are ready to plot the collisions on the map.  
 
-This is a broad view of the city, including the suburbs :
+This is a broad view of the city, including the suburbs : 
 
 ```{r warning=FALSE}
 #broad view of Ottawa
 ggmap(ottawa.map)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude), size=0.5, col='blue') + scale_y_continuous(limits=c(45.0,45.55)) +
-  scale_x_continuous(limits=c(-76.4,-75.0)) + labs(x="Longitude", y="Latitude") + ggtitle("Vehicle Collisions in Ottawa, as of 2016")
+  scale_x_continuous(limits=c(-76.4,-75.0)) + labs(x="Longitude", y="Latitude") + ggtitle("Vehicle Collisions in Ottawa, in 2016")
 ```
 
-We can see from the above plot that there are more collisions in the more populated areas of the city (downtown, Orleans, Barhaven, Kanata...) which is not really surprising. We may assume that, since there is a higher volume of vehicles on the road in more urban areas, there will be more accidents, compared to more rural areas.
+We can see from the above plot that there are more collisions in the more populated areas of the city (downtown, Orléans, Barhaven, Kanata...) which is not really surprising. We may assume that, since there is a higher volume of vehicles on the road in more urban areas, there will be more collisions compared to more rural areas. It is also interesting to see the shape of the city, since the city limits are clearly distinguishable by the distribution of the collisions.
+
+We can change the map by using a different scale, and get a closer look at the city:
+
+```{r warning=FALSE}
+#getting a better zoom
+
+ggmap(ottawa.map3)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude), size=0.5, col="darkolivegreen") + scale_y_continuous(limits=c(45.15,45.55)) + scale_x_continuous(limits=c(-76.0,-75.4)) + labs(x="Longitude", y="Latitude")+ labs(x="Longitude", y="Latitude") + ggtitle("Vehicle Collisions in Ottawa, in 2016")
+```
+
+
+Again, we can clearly see that there are more collisions on the main roads, with the concentration of collisions increasing as the roads get closer to downtown Ottawa or to a suburb.
+
+We can also observe the distribution of the collisions in Downtown Ottawa by using a map with a different scale :  
+
+```{r warning=FALSE}
+#view of DowntownOttawa
+
+ggmap(ottawa.map.zoomer)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude), size=0.3, col = "deepskyblue") + scale_y_continuous(limits=c(45.38,45.44)) + scale_x_continuous(limits=c(-75.75,-75.65)) + ggtitle("2016 Collisions in Downtown Ottawa") + labs(x="Longitude", y="Latitude")
+
+```
+
+In this case, we can see that the roads leading into the downtown core, like Bank Street or Bronson Avenue, have a high frequency of collisions, presumably because these are typical roads for commuters and workers coming into town. Also, with this map, it is interesting to see that some intersections, like Elgin Street and Laurier Avenue West, or Slater Street and Lyon Street North, have a higher density of collisions points than other intersections, than say Laurier Avenue West and Bank Street. Possibly, some intersections may be dealing with a higher volume of vehicles than others, or maybe the configuration of the intersections may lead to it being more collision prone. 
+
+Thus, these maps can help us identify possibly problematic areas with a many collisions points that would require further investigation.
+
+
+###Bivariate Visualizations
+
+Furthermore, other variables from the dataset plotted pairwise can give us a high-level understanding and overview of possible trends or patterns in the data. The next step in our data exploration will be to look at some bivariate plots.
+
+###Time Variables
+
+In the collisions dataset, we got variables for the time of the collision and the date of the collision. It may be interesting to see how these time variables interact with each other, and with other variables.
+
+#####1) Hour and Month
+First, the hour and the month of each collision could be of interest, therefore we extract this information from the *Time* and the *Date* variables :  
+
+```{r}
+library(ggpubr)
+library(lubridate)
+library(hexbin)
+library(plyr)
+library(reshape2)
+
+#extracting the month out of the date variable and making a new variable for month
+
+df$Month <- as.factor(month(as.POSIXlt(df$Date, format="%m/%d/%Y")))
+levels(df$Month) <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+
+#extracting the hour out of the time variable and making a new variable for hour
+
+df$Hour <- as.factor(format(as.POSIXct(df$Time,format="%H:%M"),"%H"))
+
+
+```
+
+Now, since we have the necessary information, we can see if there is any trends. The graphs below let us compare the total number of collisions by hour for every month of the year. 
+
+```{r}
+ggplot(df) + geom_bar(aes(Hour)) + facet_wrap(~Month, scales="free_y") + coord_flip() + theme(axis.text.y=element_text(size=rel(0.5)))+ggtitle("Number of Collisions per Hour for Every Month of the Year") + labs(x="Hour of the Day", y="Number of Collisions")
+```
+
+When we look at the above plots, there is a similar trend throughout the first months of the year (January, February, and March) and the last months of the year (September, October, November and December) : the distribution of the collisions is bimodal, meaning that there seems to be a higher number of collisions at two times in the day. This is expected and in line with the common knowledge of rush-hour traffic in the morning, and in the afternoon in a city like Ottawa.
+
+On the other, for the typical "summer" months (April, May, June, July and August), the distribution of the collisions by hour seems to be more unimodal, with a peak during afternoon rush hour. There is still a peak of collisions during the morning rush-hours, but they are not as prominent in the summer months. This may be due to the fact that Ottawa residents typically take vacations during the summer months and maybe are on the roads later in the morning, or work hours may be less rigid during the summer, and workers go into work at later hours, leading to a more uniform number of vehicles on the road in the morning hours, leading to a more uniform number of collisions.
+
+Also, if we specifically look at the peak collision hours in the afternoon/evening throughout the year, we see that generally, the peak collision hour for Jan-Apr is 16:00-17:00, while it is 15:00-16:00 for May-Sept, and again 16:17 for Oct-Dec. Similarly, if we look at the peak collision hours in the morning throughout the year, we generally see that during the winter months, the peak morning hour collision time is earlier in the morning (7:00-8:00), while in the summer months, the morning peak hour collision time is later in the morning (8:00-9:00).Again, these observations are not really surprising, if we assume that people may leave later for work and leave earlier from work during the summer months, leading to more vehicles on the road during these times.
+
+
+#####2) Month and Light Type
+
+In the following plot, we will see the proportion of collisions that occured during different lighting types, by month.
+
+```{r}
+#Light and Month
+
+ggplot(df) + geom_bar(aes(Month, fill=Light),position="fill") + theme(axis.text.x=element_text(angle=90)) + ggtitle("Proportion of Accidents by Light type per Month") + labs(x="Month", y="Proportion of Collisions")
+```
+
+Not surprisingly, we see what we would expect to see, knowing how sunlight behaves throughout the year in Canada: a higher proportion of accidents happen during the daylight during the summer months, and in darkness during the winter months, since there are more daylight hours during the summer and darkness hours during the winter months.
+
+#####3) Month and Environment Type/Month and Road_Surface
+
+Next, we can plot the distribution of collisions by *Environment* and *Month*, as well as *Road Surface* and *Month* . Again, we expect to see results aligned with common sense. 
+
+```{r}
+#Month and Environment
+ggplot(df) + geom_bar(aes(Month, fill=Environment),position="fill") + ggtitle("Proportion of Accidents by Environment Type per Month") + labs(x="Month", y="Proportion of Collisions")
+
+#Month and Environment
+ggplot(df) + geom_bar(aes(Month, fill=Road_Surface),position="fill") + ggtitle("Proportion of Accidents by Road Condition Type per Month") + labs(x="Month", y="Proportion of Collisions")
+```
+
+In fact, we see result that we expected. For instance, in Dec-Jan-Feb, between 20% and 40% of collisions happened when it was snowing. However, a bit unusually, there were more accidents in April when it was snowin than in March. Since there usually is less snow in April than in March, this is a interesting. Perhaps winter tires were no longer on the cars, which resulted in more collisions during snowy conditions? Also, fog/mist/smoke/dust seemed to be more present during collisions in November. 
+
+The results for the road surface are equally predictable. In the summer months, 80-90% of collisions happened when the road was dry, while 15-20% of collisions in December and February happened when the road was icy. 
+
+These observations are all in line with basic knowledge of Canadian driving conditions. Later on, we will plot the collisions on the map and identify them by road_surface and enviroment conditions, which can maybe give us a sense or help us target specific roads that may be problematic in terms of road conditions. 
+
+
+###Other Variables
+
+We will also try to observe the relationship between other variables. 
+
+#####1) Impact type and Collision Classification
+
+This graph seperates the collisions by classification type (fatal injury, non-fatal injury and property damage only) and indicates the proportion of accidents by impact type:
+
+```{r}
+ggplot(df) + geom_bar(aes(Collision_Classification, fill=Impact_type),position="fill") + ggtitle("Proportion of Collision by Classification and Impact Type") + labs(x="Collision Classification", y="Proportion of Collisions")
+```
+
+From the graph above, we see that collisions that resulted in fatal injuries usually involed a SMV (single motor vehicle), a turning movement or an approaching vehicle. On the other hand, non-fatal and p.d only collisions were often rear end collisions. 
+
+#####2) Impact type and Traffic_Control
+
+```{r}
+ggplot(df) + geom_bar(aes(Impact_type)) + 
+  facet_wrap(~Traffic_Control, scales="free_y") + theme(axis.text.x=element_text(angle=90)) + ggtitle("Collisions by Impact Type per Traffic Control") + labs(x="Impact Type", y="Collisions")
+```
+
+From the above graphs, it is interesting to see that rear end collisions is the most frequent impact type at roundabouts, while angle collisions are the most common form of collisions at stop signs. We may want to reflect on why this is.
+
+Also, we have to be careful in the interpretation of the pedestrian crossover graph. Since there was only one collision involving a pedestrian crossover, the fact that 100% of pedestrian crossover collisions were rear end collision does not mean anything, since it is only based on one observation.
+
+#####3) Light and Collision Classification
+
+In the next graph, we will try to determine links between the type of light at the time of the collision, and the collision classification:
+
+```{r}
+ggplot(df) + geom_bar(aes(Light)) + 
+  facet_wrap(~Collision_Classification, scales="free_y") + 
+  theme(axis.text.x=element_text(angle=90))+
+  scale_fill_brewer(palette = "Set1", name = "Light") + ggtitle("Number of Accidents by Light Type per Collision Classification") + labs(x="Light Type", y="Number of Collisions")
+```
+
+Across the different collision classifications, the trend regarding the light is quite evident : most accidents in all classification types occur during the daylight, which makes sense since there are presumably more cars on the road at this time. Most of the collisions that don't happen during daylight happen when it is dark outside.
+
+
+### Multivariate Visualizations - Maps
+
+I need to add comments.
 
 ```{r}
 ggmap(ottawa.map)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Light), size=0.5) + scale_y_continuous(limits=c(45.0,45.55)) +
   scale_x_continuous(limits=c(-76.4,-75.0)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Downtown Ottawa by Environment Type")
 
-#zoomed onto downtown core with colours being different environments (this one is cool!)
+#zoomed onto downtown core with colours being different environments 
 ggmap(ottawa.map.zoomer)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, col=Environment), size=0.5) + scale_y_continuous(limits=c(45.38,45.44)) +
   scale_x_continuous(limits=c(-75.75,-75.65)) + ggtitle("2016 Collisions in Downtown Ottawa by Environment Type") + labs(x="Longitude", y="Latitude")
 
 ggmap(ottawa.map.zoomer)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Traffic_Control), size=0.5) + scale_y_continuous(limits=c(45.38,45.44)) +
   scale_x_continuous(limits=c(-75.75,-75.65)) + ggtitle("2016 Collisions in Downtown Ottawa by Environment Type") + labs(x="Longitude", y="Latitude")
 
-#data points on map and collision classification
-ggmap(ottawa.map4)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, col=Collision_Classification), size=0.5 ) +scale_y_continuous(limits=c(45.0,45.55)) + scale_x_continuous(limits=c(-76.2,-75.0)) + labs(x="Longitude", y="Latitude")
-
-ggmap(ottawa.map3)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude), size=0.5, col="blue") + scale_y_continuous(limits=c(45.15,45.55)) +
-  scale_x_continuous(limits=c(-76.0,-75.4)) + labs(x="Longitude", y="Latitude")
-
-#more zoom
-ggmap(ottawa.map3)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude), size=0.5, col="red") + scale_y_continuous(limits=c(45.15,45.55)) +
-  scale_x_continuous(limits=c(-76.0,-75.4)) + labs(x="Longitude", y="Latitude")+ labs(x="Longitude", y="Latitude")
-
 
 ```
+
+
 
