@@ -359,7 +359,7 @@ library(reshape2)
 #extracting the month out of the date variable and making a new variable for month
 
 df$Month <- as.factor(month(as.POSIXlt(df$Date, format="%m/%d/%Y")))
-levels(df$Month) <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+levels(df$Month) <- month.abb[1:12]
 
 #extracting the hour out of the time variable and making a new variable for hour
 
@@ -376,10 +376,25 @@ ggplot(df) + geom_bar(aes(Hour)) + facet_wrap(~Month, scales="free_y") + coord_f
 
 When we look at the above plots, there is a similar trend throughout the first months of the year (January, February, and March) and the last months of the year (September, October, November and December) : the distribution of the collisions is bimodal, meaning that there seems to be a higher number of collisions at two times in the day. This is expected and in line with the common knowledge of rush-hour traffic in the morning, and in the afternoon in a city like Ottawa.
 
-On the other, for the typical "summer" months (April, May, June, July and August), the distribution of the collisions by hour seems to be more unimodal, with a peak during afternoon rush hour. There is still a peak of collisions during the morning rush-hours, but they are not as prominent in the summer months. This may be due to the fact that Ottawa residents typically take vacations during the summer months and maybe are on the roads later in the morning, or work hours may be less rigid during the summer, and workers go into work at later hours, leading to a more uniform number of vehicles on the road in the morning hours, leading to a more uniform number of collisions.
+On the other hand, for the typical "summer" months (April, May, June, July and August), the distribution of the collisions by hour seems to be more unimodal, with a peak during afternoon rush hour. There is still a peak of collisions during the morning rush-hours, but they are not as prominent in the summer months. This may be due to the fact that Ottawa residents typically take vacations during the summer months and maybe are on the roads later in the morning, or work hours may be less rigid during the summer, and workers go into work at later hours, leading to a more uniform number of vehicles on the road in the morning hours, leading to a more uniform number of collisions.
 
 Also, if we specifically look at the peak collision hours in the afternoon/evening throughout the year, we see that generally, the peak collision hour for Jan-Apr is 16:00-17:00, while it is 15:00-16:00 for May-Sept, and again 16:17 for Oct-Dec. Similarly, if we look at the peak collision hours in the morning throughout the year, we generally see that during the winter months, the peak morning hour collision time is earlier in the morning (7:00-8:00), while in the summer months, the morning peak hour collision time is later in the morning (8:00-9:00).Again, these observations are not really surprising, if we assume that people may leave later for work and leave earlier from work during the summer months, leading to more vehicles on the road during these times.
 
+
+
+```{r}
+grp_month <- group_by(df,Month)
+sum_month <- summarise(grp_month, mean = mean(Time), sd = sd(Time))
+ggplot(sum_month,aes(Month,mean, group = 1)) + geom_point() + geom_line()
+```
+
+
+```{r}
+df$Week <- week(df$Date)
+grp_week <- group_by(df,Week)
+sum_week <- summarise(grp_week,mean = mean(Time))
+ggplot(sum_week,aes(Week,mean, group = 1)) + geom_point() + geom_line()
+```
 
 #####2) Month and Light Type
 
@@ -388,7 +403,7 @@ In the following plot, we will see the proportion of collisions that occured dur
 ```{r}
 #Light and Month
 
-ggplot(df) + geom_bar(aes(Month, fill=Light),position="fill") + theme(axis.text.x=element_text(angle=90)) + ggtitle("Proportion of Accidents by Light type per Month") + labs(x="Month", y="Proportion of Collisions")
+ggplot(df) + geom_bar(aes(Month, fill=Light),position="fill") + theme(axis.text.x=element_text(angle=0)) + ggtitle("Proportion of Accidents by Light type per Month") + labs(x="Month", y="Proportion of Collisions")
 ```
 
 Not surprisingly, we see what we would expect to see, knowing how sunlight behaves throughout the year in Canada: a higher proportion of accidents happen during the daylight during the summer months, and in darkness during the winter months, since there are more daylight hours during the summer and darkness hours during the winter months.
@@ -469,5 +484,37 @@ ggmap(ottawa.map.zoomer)+ geom_point(data = data_with_lat.long, aes(x=Longitude,
 
 ```
 
+### Word Map
 
+```{r}
+library("tm")
+library("wordcloud")
+library("RColorBrewer")
+```
 
+```{r}
+docs <- Corpus(VectorSource(df$Location))
+docs <- tm_map(docs, tolower)
+dtm <- TermDocumentMatrix(docs)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 10)
+set.seed(1234)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
+
+```{r}
+docs_road <- tm_map(docs, removeWords, c("ave", "btwn", "blvd", "pkwy", "highway", "st."))
+dtm <- TermDocumentMatrix(docs_road)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 10)
+set.seed(1234)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
