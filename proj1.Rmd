@@ -67,7 +67,9 @@ levels(df$Light)
 ```
 
 Since there are only two observations in the "" label, we may assume that these are missing values or data entry errors.
-
+```{r}
+df$Collision_Classification <- as.factor(df$Collision_Classification)
+```
 - **Collision_Classification**: a categorical variable with 3 levels:
     - *01 - Fatal injury*: Implies that one or more person has deceased due to the collision.
     - *02 - Non-fatal injury*: Implies that one or more person got injured as a result of the collision, but no one died.
@@ -647,11 +649,8 @@ plot(r, srt=0, lty=0, node_margin = 0.1, plot_area = 1,fix.pdf = T)
 ```
 
 ```{r}
-df2 <- read.csv('2016collisionsfinal.csv',header = T, stringsAsFactors = F)
-df2 <- na.omit(df2)
-
-v2 <- as.factor(df2$Collision_Classification)
-v1 <- as.factor(df2$Impact_type)
+v2 <- as.factor(df$Collision_Classification)
+v1 <- as.factor(df$Impact_type)
 
 #from_label <- str_extract(levels(v1),"([a-zA-Z]+)( ?)([a-zA-Z]+)")
 #to_label <- str_extract(levels(v2),"([a-zA-Z]+)( ?)([a-zA-Z]+)")
@@ -676,5 +675,36 @@ styles <- lapply(
 names(styles) = nodes$ID
 r <- makeRiver(nodes, edges, node_styles = styles)
 plot(r, srt=0, lty=0, node_margin = 0.1, plot_area = 1,fix.pdf = T)
+```
+
+```{r echo=TRUE}
+fatal_only <- df[which(df$Collision_Classification == "01 - Fatal injury"),]
+fatal_only$Collision_Classification <- droplevels(fatal_only$Collision_Classification)
+v2 <- fatal_only$Collision_Classification
+v1 <- as.factor(fatal_only$Impact_type)
+v3 <- as.factor(fatal_only$Road_Surface)
+
+#from_label <- str_extract(levels(v1),"([a-zA-Z]+)( ?)([a-zA-Z]+)")
+#to_label <- str_extract(levels(v2),"([a-zA-Z]+)( ?)([a-zA-Z]+)")
+
+#levels(v1) <- paste(from_label)
+
+edges <- as.data.frame(table(v1, v2))
+colnames(edges) <- c("N1", "N2", "Value")
+nodes <- data.frame(
+  ID = c(levels(v1), levels(v2)), 
+  x = c(rep(1,length(levels(v1))),rep(2,length(levels(v2))))
+)
+
+palette = paste0(brewer.pal(9, "Set3"))
+styles <- lapply(
+  c(1:8,1), 
+  function(n) {
+    list(col = palette[n+1])
+  })
+
+names(styles) <- nodes$ID
+r <- makeRiver(nodes, edges, node_styles = styles)
+plot(r, srt=0, lty=0,node_margin = 0.1, plot_area = 1,fix.pdf = T)
 ```
  
