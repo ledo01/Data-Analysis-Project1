@@ -152,7 +152,7 @@ The first thing to say about this plot is that it is very unlikely that a number
 ```{r}
 p + scale_x_datetime(limits =plot_lim, breaks=date_breaks("2 hours"), labels=date_format("%H:%M", tz="America/Toronto"))
 ```
-While trying to fix the range and format of the x axis, for some reason, *geom_bar* automatically removes the missing value. But now, for some reason, the x axis limits goes from 5am to 4:59am the next day.
+While trying to fix the range and format of the x axis, for some reason, *geom_bar* automatically removes the missing value. From this visualization, it seems that there is more collisions around 8am and around 4pm. This is probably due to rush hour. 
 
 ### Colision along the year
 ```{r eval=FALSE, include=FALSE}
@@ -184,12 +184,31 @@ summary(df)
 hist(summary(df)[,5])
 ```
 ** In not sure why, but I can't run this code. I have made pretty much the same graph, but without doing database manipulations**
-```{r eval=FALSE, include=FALSE}
-p <- ggplot(df, aes(Date)) + geom_histogram(binwidth = 5)
-show(p)
+
+First, the hour and the month of each collision could be of interest, therefore we extract this information from the *Time* and the *Date* variables :  
+
+```{r}
+library(ggpubr)
+library(lubridate)
+library(hexbin)
+library(plyr)
+library(reshape2)
+
+#extracting the month out of the date variable and making a new variable for month
+
+df$Month <- as.factor(month(as.POSIXlt(df$Date, format="%m/%d/%Y")))
+levels(df$Month) <- month.abb[1:12]
+
+#extracting the hour out of the time variable and making a new variable for hour
+
+df$Hour <- as.factor(format(as.POSIXct(df$Time,format="%H:%M"),"%H"))
 ```
 
-
+```{r}
+p <- ggplot(df,aes(x = df$Month)) + geom_bar() + xlab("Month") + ylab("Number of collision")
+show(p)
+```
+As we can see, it seems that there is a higher total number of accident in Decembre, January annd Febuary. This might be due to winter and the snow. More on this will be explored in the bivariate part of this document.
 
 ### Map Visualization
 
@@ -304,7 +323,7 @@ ottawa.map.zoomer <- get_stamenmap(bbox = c(left = -75.75, bottom = 45.38, right
 
 ```
 
-##Maps
+#### Maps
 
 Finally, we are ready to plot the collisions on the map.  
 
@@ -351,27 +370,6 @@ Furthermore, other variables from the dataset plotted pairwise can give us a hig
 
 In the collisions dataset, we got variables for the time of the collision and the date of the collision. It may be interesting to see how these time variables interact with each other, and with other variables.
 
-#####1) Hour and Month
-First, the hour and the month of each collision could be of interest, therefore we extract this information from the *Time* and the *Date* variables :  
-
-```{r}
-library(ggpubr)
-library(lubridate)
-library(hexbin)
-#library(plyr)
-library(reshape2)
-
-#extracting the month out of the date variable and making a new variable for month
-
-df$Month <- as.factor(month(as.POSIXlt(df$Date, format="%m/%d/%Y")))
-levels(df$Month) <- month.abb[1:12]
-
-#extracting the hour out of the time variable and making a new variable for hour
-
-df$Hour <- as.factor(format(as.POSIXct(df$Time,format="%H:%M"),"%H"))
-
-
-```
 
 Now, since we have the necessary information, we can see if there is any trends. The graphs below let us compare the total number of collisions by hour for every month of the year. 
 
@@ -385,20 +383,10 @@ On the other hand, for the typical "summer" months (April, May, June, July and A
 
 Also, if we specifically look at the peak collision hours in the afternoon/evening throughout the year, we see that generally, the peak collision hour for Jan-Apr is 16:00-17:00, while it is 15:00-16:00 for May-Sept, and again 16:17 for Oct-Dec. Similarly, if we look at the peak collision hours in the morning throughout the year, we generally see that during the winter months, the peak morning hour collision time is earlier in the morning (7:00-8:00), while in the summer months, the morning peak hour collision time is later in the morning (8:00-9:00).Again, these observations are not really surprising, if we assume that people may leave later for work and leave earlier from work during the summer months, leading to more vehicles on the road during these times.
 
-
 ```{r}
-grp_month <- group_by(df,Month)
-sum_month <- summarise(grp_month, mean = mean(Time), sd = sd(Time))
-ggplot(sum_month,aes(Month,mean, group = 1)) + geom_point() + geom_line() + labs(title = "Average time of collision per month", y = "Mean")
+ggplot(df,aes(x = Month, fill=Environment)) + geom_bar() + xlab("Month") + ylab("Number of collision")
 ```
 
-
-```{r eval=FALSE, include=FALSE}
-df$Week <- week(df$Date)
-grp_week <- group_by(df,Week)
-sum_week <- summarise(grp_week,mean = mean(Time))
-ggplot(sum_week,aes(Week,mean, group = 1)) + geom_point() + geom_line() + labs(title = "Average time of collision per week", y = "Mean")
-```
 
 #####2) Month and Light Type
 
@@ -495,13 +483,37 @@ As for non intersection collisions, SMV and rear-end collisions are the most fre
 Since the collisions happen much more often at the above four collision locations, it is hard to interpret the graph for the less common locations. We could try to visualize the information in a different way: 
 
 ```{r}
-
 ggplot(df) + geom_bar(aes(Collision_Location, fill=Impact_type),position="fill") + ggtitle("Proportion of Collision by Collision Location and Impact Type") + labs(x="Collision Location", y="Proportion of Collisions")+coord_flip()+theme(legend.position = "bottom")
 
 ```
 
 Other than the four collisions already mentioned, only the "Overpass or Bridge" location is probably worthwhile to intepret, since the other locations have less than 10 instances each, which is not sufficient to draw any conclusions. 
 From the above plot, we see that rear end collisions represent about half of collisions on overpasses or bridges, while roughly 25% are SVM collisions. 
+
+#### Impact Type and Environment/Road Surface
+
+```{r}
+p <- ggplot(df %>% filter(Impact_type == "01 - Approaching")) 
+p1 <- p + geom_bar(aes(Impact_type, fill=Environment), position="fill") + theme(legend.position = "left")
+p2 <- p + geom_bar(aes(Impact_type, fill = Road_Surface), position = "fill") 
+grid.arrange(p1,p2, ncol=2)
+```
+```{r}
+dat <- table(df$Environment, df$Road_Surface)
+dat <- melt(dat)
+colnames(dat) <- c("Environment", "Road_Surface", "Value")
+dat$Rescale <- rescale(dat$Value)
+ggplot(dat, aes(Environment, Road_Surface)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1))
+```
+
+```{r}
+appr_only <- df %>% filter(Impact_type == "01 - Approaching")
+dat <- table(appr_only$Environment, appr_only$Road_Surface)
+dat <- melt(dat)
+colnames(dat) <- c("Environment", "Road_Surface", "Value")
+dat$Rescale <- rescale(dat$Value)
+ggplot(dat, aes(Environment, Road_Surface)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1))
+```
 
 ### Multivariate Visualizations - Maps
 
@@ -707,5 +719,35 @@ styles <- lapply(
 names(styles) <- nodes$ID
 r <- makeRiver(nodes, edges, node_styles = styles)
 plot(r, srt=0, lty=0,node_margin = 0.1, plot_area = 1,fix.pdf = T)
+```
+
+```{r}
+appr_only <- df %>% filter(Impact_type == "01 - Approaching")
+v2 <- as.factor(appr_only$Environment)
+v1 <- as.factor(appr_only$Road_Surface)
+
+from_label <- str_extract(levels(v1),"([a-zA-Z]+)( ?)([a-zA-Z]+)")
+to_label <- str_extract(levels(v2),"([a-zA-Z]+)( ?)([a-zA-Z]+)")
+
+levels(v1) <- paste("E - ",from_label)
+levels(v2) <- paste("R - ",to_label)
+
+edges <- as.data.frame(table(v1, v2))
+colnames(edges) <- c("N1", "N2", "Value")
+nodes <- data.frame(
+  ID = c(levels(v1), levels(v2)), 
+  x = c(rep(1,length(levels(v1))),rep(2,length(levels(v2))))
+)
+
+palette = paste0(brewer.pal(9, "Set3"))
+styles <- lapply(
+  c(1:10,1:9), 
+  function(n) {
+    list(col = palette[n+1])
+  })
+
+names(styles) = nodes$ID
+r <- makeRiver(nodes, edges, node_styles = styles)
+plot(r, srt=0, lty=0, node_margin = 0.1, plot_area = 1,fix.pdf = T)
 ```
  
