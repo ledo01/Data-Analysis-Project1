@@ -77,6 +77,7 @@ df$Collision_Classification <- as.factor(df$Collision_Classification)
     
   - **Impact_type**: a categorical variable that specifies the type of impact for the collision. It has levels:
 ```{r}
+df$Impact_type <- as.factor(df$Impact_type)
 levels(df$Impact_type)
 ```
 ### Simple plot of the categorical variables 
@@ -149,7 +150,7 @@ show(p)
 The first thing to say about this plot is that it is very unlikely that a number this large of collisions happened exactly at 00:00. This could indicate many things, but most likely that some entries are missing or ill formatted.
 
 ```{r}
-p + scale_x_datetime(limits =plot_lim, breaks=date_breaks("2 hours"), labels=date_format("%H:%M"))
+p + scale_x_datetime(limits =plot_lim, breaks=date_breaks("2 hours"), labels=date_format("%H:%M", tz="America/Toronto"))
 ```
 While trying to fix the range and format of the x axis, for some reason, *geom_bar* automatically removes the missing value. But now, for some reason, the x axis limits goes from 5am to 4:59am the next day.
 
