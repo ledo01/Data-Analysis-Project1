@@ -544,16 +544,14 @@ dat <- table(df$Environment, df$Road_Surface)
 dat <- melt(dat)
 colnames(dat) <- c("Environment", "Road_Surface", "Value")
 dat$Rescale <- rescale(dat$Value)
-ggplot(dat, aes(Environment, Road_Surface)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1))
-```
+ggplot(dat, aes(Environment, Road_Surface)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1)) + labs(title = "Heatmap of Environment vs Road_Surface with the whole dataset")
 
-```{r}
 appr_only <- df %>% filter(Impact_type == "01 - Approaching")
 dat <- table(appr_only$Environment, appr_only$Road_Surface)
 dat <- melt(dat)
 colnames(dat) <- c("Environment", "Road_Surface", "Value")
 dat$Rescale <- rescale(dat$Value)
-ggplot(dat, aes(Environment, Road_Surface)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1))
+ggplot(dat, aes(Environment, Road_Surface)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1)) + labs(title = "Heatmap of Environment vs Road_Surface \n considering only approaching impact.")
 ```
 
 ### Multivariate Visualizations - Maps
@@ -752,7 +750,7 @@ nodes <- data.frame(
 
 palette = paste0(brewer.pal(9, "Set3"))
 styles <- lapply(
-  c(1:8,1), 
+  c(1:8,3), 
   function(n) {
     list(col = palette[n+1])
   })
