@@ -1,9 +1,9 @@
 ---
 title: "Project 1"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 ---
 ```{r include=FALSE}
 library(tidyverse);
@@ -53,19 +53,10 @@ df$Traffic_Control <- as.factor(df$Traffic_Control)
 levels(df$Traffic_Control)
 ```
 
-We can drop the observation that have the label ""
-
-```{r}
-# df <- df[-which(df$Traffic_Control == ""),]
-# df$Traffic_Control <- droplevels(df$Traffic_Control)
-# levels(df$Traffic_Control)
-```
-
   - **Collision_Location**: a categorical variable that specifies where the collision happened, but in terms of road types. We again got the label *""*, however we also have two labels for other road types: *"98 - Other"* and *"99 - Other"*. This is probably a data entry error, because all the other variables use the label *"99 - Other"*.
 ```{r}
 df$Collision_Location <- as.factor(df$Collision_Location)
 levels(df$Collision_Location)
-
 ```
 If we look at which observation are not label properly, 
 ```{r}
@@ -76,12 +67,7 @@ we can see that only two observation are label "98 - Other". This is probably an
 ```{r}
 df$Collision_Location[which(df$Collision_Location == "98 - Other")] <- "99 - Other"
 ```
-However, for the value that have the label "", there's not much we can do, and we better exclude those observation from the dataset.
-```{r}
-# df <- df[-which(df$Collision_Location == ""),]
-# df$Collision_Location <- droplevels(df$Collision_Location)
-# levels(df$Collision_Location)
-```
+However, for the value that have the label "", there's not much we can do other than exclude them from the dataset if they pose any problem.
 
  - **Light**: a categorical variable that specifies the amount of light (natural or artificial) at the moment of the collision. We again got the *""* label.
 ```{r}
@@ -89,12 +75,7 @@ df$Light <- as.factor(df$Light)
 levels(df$Light)
 ```
 
-Since there are only two observations in the "" label, we may assume that these are missing values or data entry errors. We can again, remove them 
-```{r}
-#df <- df[-which(df$Light == ""),]
-#df$Light <- droplevels(df$Light)
-#levels(df$Light)
-```
+Since there are only two observations in the "" label, we may assume that these are missing values or data entry errors.
 
 ```{r}
 df$Collision_Classification <- as.factor(df$Collision_Classification)
@@ -149,6 +130,7 @@ p + aes(x = df$Collision_Location) + geom_bar() + coord_flip() + xlab('Collision
 p <- ggplot(df, aes(x = df$Light)) + geom_bar() + coord_flip() + xlab('Light')
 show(p)
 ```
+Here, we can clearly see that most collision happen in daylight.
 
 ### Collision classification
 ```{r}
@@ -657,7 +639,6 @@ We can again plot the collisions points on a map of Ottawa, but identify the col
 #####1) Map with regards to Impact Type
 
 ```{r}
-
 ggmap(ottawa.map3)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Impact_Type), size=1) + scale_y_continuous(limits=c(45.14344,45.55)) +scale_x_continuous(limits=c(-76.2384,-75.2)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Ottawa by Impact Type")
 ```
 
@@ -698,7 +679,6 @@ The above plot demonstrates that more than half of the fatal collisions happened
 Since Freezing Rain is not unheard of during the winter in Ottawa, it can be interesting to determine if any impact types are more frequent in certain areas of the city when it is freezing rain. 
 
 ```{r}
-
 ggmap(ottawa.map.zoom)+ geom_point(data = data_with_lat.long %>% filter(Environment == "04 - Freezing Rain" ), aes(x=Longitude, y=Latitude, color=Impact_Type), size=2) + scale_y_continuous(limits=c(45.3,45.45)) +scale_x_continuous(limits=c(-75.8,-75.6)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Freezing Rain by Impact Type in Ottawa")
 
 ```
@@ -792,7 +772,6 @@ plot(r, srt=0, lty=0, node_margin = 0.1, plot_area = 1,fix.pdf = T)
 ###Conclusion
 
 Finally, after exploring the dataset, we are better equipped to determine if this dataset is trustworthy. 
-
 In general, this dataset seems to be trustworthy. There doesn't seem to be too many missing values, and the few missing values seem to be missing at random. In general, these missing values do not seem to have a big impact on the dataset, therefore further analysis is probably possible, if imputation methods are used to fill in the missing values, or if they are disregarded completely. Also, there are some data entry errors, as some values were not entered in the same format as the rest (ex. a few X and Y coordinates, a few time values, etc.). However, datasets are rarely perfect, and this one is no exception, but the few problems with it do not warrant it unusable. 
 
 Depending on the needs and the questions that we want to answer, this data can be useful.
@@ -800,5 +779,4 @@ For instance, since we have the geographic locations of all the collisions, we c
 We also determined that roads with no traffic control have a variety of different types of impact. Further investigation into this issue may prove useful in the way that we could maybe determine areas that would benefit from having some type of traffic control (ex. adding some stop signs, lights, etc. on some specific roads that don't already have these traffic controls). 
 This dataset is also useful in gathering information related to fatal collisions, and maybe the analysis of this data could lead to new discoveries or implementations that will reduce the number of fatal collisions in the years to come. 
 
-Thus, this dataset is a decent one, from which we can gather some information that could possibly save lives or at least limit the number of accidents that could be avoided with some small changes to road maintenance or traffic control. 
- 
+Thus, this dataset is a decent one, from which we can gather some information that could possibly save lives or at least limit the number of accidents that could be avoided with some small changes to road maintenance or traffic control.
