@@ -20,7 +20,6 @@ We were given the dataset *2016collision.csv*. If we inspect the file, we can se
 
 ```{r}
 df <- read.csv('2016collisionsfinal.csv', header = T, stringsAsFactors = F)
-df <- na.omit(df)
 ```
 And the name of the 13 variables are:
 ```{r}
@@ -54,10 +53,34 @@ df$Traffic_Control <- as.factor(df$Traffic_Control)
 levels(df$Traffic_Control)
 ```
 
+We can drop the observation that have the label ""
+
+```{r}
+# df <- df[-which(df$Traffic_Control == ""),]
+# df$Traffic_Control <- droplevels(df$Traffic_Control)
+# levels(df$Traffic_Control)
+```
+
   - **Collision_Location**: a categorical variable that specifies where the collision happened, but in terms of road types. We again got the label *""*, however we also have two labels for other road types: *"98 - Other"* and *"99 - Other"*. This is probably a data entry error, because all the other variables use the label *"99 - Other"*.
 ```{r}
 df$Collision_Location <- as.factor(df$Collision_Location)
 levels(df$Collision_Location)
+
+```
+If we look at which observation are not label proprely, 
+```{r}
+which(df$Collision_Location == "98 - Other")
+which(df$Collision_Location == "")
+```
+we can see that only two observation are label "98 - Other". This is probably an error, we can remap them to "99 - Other".
+```{r}
+df$Collision_Location[which(df$Collision_Location == "98 - Other")] <- "99 - Other"
+```
+However, for the value that have the label "", there's not much we can do, and we better exclude those observation from the dataset.
+```{r}
+# df <- df[-which(df$Collision_Location == ""),]
+# df$Collision_Location <- droplevels(df$Collision_Location)
+# levels(df$Collision_Location)
 ```
 
  - **Light**: a categorical variable that specifies the amount of light (natural or artificial) at the moment of the collision. We again got the *""* label.
@@ -66,7 +89,13 @@ df$Light <- as.factor(df$Light)
 levels(df$Light)
 ```
 
-Since there are only two observations in the "" label, we may assume that these are missing values or data entry errors.
+Since there are only two observations in the "" label, we may assume that these are missing values or data entry errors. We can again, remove them 
+```{r}
+#df <- df[-which(df$Light == ""),]
+#df$Light <- droplevels(df$Light)
+#levels(df$Light)
+```
+
 ```{r}
 df$Collision_Classification <- as.factor(df$Collision_Classification)
 ```
@@ -288,17 +317,14 @@ gps_coords <- spTransform(utms, CRS(latlong))
 
 #making new data.frame with lat-long coords and all other variables
 data_with_lat.long <- data.frame(gps_coords)
-data_with_lat.long <- data_with_lat.long[,1:13]
-names(data_with_lat.long) <-c("Record", "Location", "Date", "Time", "Environment", "Road_Surface", "Traffic_Control", "Collision_Location", "Light", "Collision_Classification", "Impact_Type", "Longitude", "Latitude")
-
+data_with_lat.long <- data_with_lat.long[,1:15]
+names(data_with_lat.long) <-c("Record", "Location", "Date", "Time", "Environment", "Road_Surface", "Traffic_Control", "Collision_Location", "Light", "Collision_Classification", "Impact_Type","Month", "Hour", "Longitude", "Latitude")
 ```
 
 Finally, the coordinates are converted to the lat-long system :
 
 ```{r}
-
 head(data_with_lat.long$Longitude)
-
 ```
 
 Next, we can get map tiles of Ottawa from Stamen Maps. We can change the size of the maps to focus on different areas of the city: 
@@ -383,10 +409,6 @@ On the other hand, for the typical "summer" months (April, May, June, July and A
 
 Also, if we specifically look at the peak collision hours in the afternoon/evening throughout the year, we see that generally, the peak collision hour for Jan-Apr is 16:00-17:00, while it is 15:00-16:00 for May-Sept, and again 16:17 for Oct-Dec. Similarly, if we look at the peak collision hours in the morning throughout the year, we generally see that during the winter months, the peak morning hour collision time is earlier in the morning (7:00-8:00), while in the summer months, the morning peak hour collision time is later in the morning (8:00-9:00).Again, these observations are not really surprising, if we assume that people may leave later for work and leave earlier from work during the summer months, leading to more vehicles on the road during these times.
 
-```{r}
-ggplot(df,aes(x = Month, fill=Environment)) + geom_bar() + xlab("Month") + ylab("Number of collision")
-```
-
 
 #####2) Month and Light Type
 
@@ -417,6 +439,12 @@ In fact, we see result that we expected. For instance, in Dec-Jan-Feb, between 2
 The results for the road surface are equally predictable. In the summer months, 80-90% of collisions happened when the road was dry, while 15-20% of collisions in December and February happened when the road was icy. 
 
 These observations are all in line with basic knowledge of Canadian driving conditions. Later on, we will plot the collisions on the map and identify them by road_surface and environment conditions, which can maybe give us a sense or help us target specific roads that may be problematic in terms of road conditions. 
+
+If take a look at the pretty much the same graph, but wiht the y axis being the total number of collision per month, we can see that the increase of total collision in the Jan, Feb and Dec seems to be partly due to snow. However, we would need to cross-reference this to a dataset of the weather in ottawa in 2016 in order to determine if the proportion of collision that happened in the snow is greater that genereal. 
+
+```{r}
+ggplot(df,aes(x = Month, fill=Environment)) + geom_bar() + xlab("Month") + ylab("Number of collision")
+```
 
 #####4) Month and Impact Type
 
@@ -492,10 +520,23 @@ From the above plot, we see that rear end collisions represent about half of col
 
 #### Impact Type and Environment/Road Surface
 
+From the previous observation, it seems that there is a high number of impact of type "01 - Approaching" that occurs when it was snowing. 
 ```{r}
+library(gridExtra)
 p <- ggplot(df %>% filter(Impact_type == "01 - Approaching")) 
-p1 <- p + geom_bar(aes(Impact_type, fill=Environment), position="fill") + theme(legend.position = "left")
-p2 <- p + geom_bar(aes(Impact_type, fill = Road_Surface), position = "fill") 
+p1 <- p + geom_bar(aes(Impact_type, fill=Environment), position="fill") + ylab("Proportion") +
+  theme(legend.position = "left", 
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+p2 <- p + geom_bar(aes(Impact_type, fill = Road_Surface), position = "fill") + 
+  theme(legend.position = "right", 
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank()) 
 grid.arrange(p1,p2, ncol=2)
 ```
 ```{r}
