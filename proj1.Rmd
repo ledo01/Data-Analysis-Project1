@@ -1,9 +1,9 @@
 ---
 title: "Project 1"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 ```{r include=FALSE}
 library(tidyverse);
@@ -67,7 +67,7 @@ df$Collision_Location <- as.factor(df$Collision_Location)
 levels(df$Collision_Location)
 
 ```
-If we look at which observation are not label proprely, 
+If we look at which observation are not label properly, 
 ```{r}
 which(df$Collision_Location == "98 - Other")
 which(df$Collision_Location == "")
@@ -237,9 +237,9 @@ df$Hour <- as.factor(format(as.POSIXct(df$Time,format="%H:%M"),"%H"))
 p <- ggplot(df,aes(x = df$Month)) + geom_bar() + xlab("Month") + ylab("Number of collision")
 show(p)
 ```
-As we can see, it seems that there is a higher total number of accident in Decembre, January annd Febuary. This might be due to winter and the snow. More on this will be explored in the bivariate part of this document.
+As we can see, it seems that there is a higher total number of accident in December, January annd February. This might be due to winter and the snow. More on this will be explored in the bivariate part of this document.
 
-### Map Visualization
+### Map Visualizations
 
 Since this dataset represents collisions in Ottawa that happened in 2016, we can plot the collisions on a map, using the coordinates (variables X and Y) from the dataset; this way, we can observe spatial details of the collisions data. 
 
@@ -324,7 +324,7 @@ names(data_with_lat.long) <-c("Record", "Location", "Date", "Time", "Environment
 Finally, the coordinates are converted to the lat-long system :
 
 ```{r}
-head(data_with_lat.long$Longitude)
+head(data_with_lat.long)
 ```
 
 Next, we can get map tiles of Ottawa from Stamen Maps. We can change the size of the maps to focus on different areas of the city: 
@@ -361,7 +361,7 @@ ggmap(ottawa.map)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Lati
   scale_x_continuous(limits=c(-76.4,-75.0)) + labs(x="Longitude", y="Latitude") + ggtitle("Vehicle Collisions in Ottawa, in 2016")
 ```
 
-We can see from the above plot that there are more collisions in the more populated areas of the city (downtown, Orléans, Barhaven, Kanata...) which is not really surprising. We may assume that, since there is a higher volume of vehicles on the road in more urban areas, there will be more collisions compared to more rural areas. It is also interesting to see the shape of the city, since the city limits are clearly distinguishable by the distribution of the collisions.
+We can see from the above plot that there are more collisions in the more populated areas of the city (downtown, Orléans, Barrhaven, Kanata...) which is not really surprising. We may assume that, since there is a higher volume of vehicles on the road in more urban areas, there will be more collisions compared to more rural areas. It is also interesting to see the shape of the city, since the city limits are clearly distinguishable by the distribution of the collisions.
 
 We can change the map by using a different scale, and get a closer look at the city:
 
@@ -440,11 +440,15 @@ The results for the road surface are equally predictable. In the summer months, 
 
 These observations are all in line with basic knowledge of Canadian driving conditions. Later on, we will plot the collisions on the map and identify them by road_surface and environment conditions, which can maybe give us a sense or help us target specific roads that may be problematic in terms of road conditions. 
 
-If take a look at the pretty much the same graph, but wiht the y axis being the total number of collision per month, we can see that the increase of total collision in the Jan, Feb and Dec seems to be partly due to snow. However, we would need to cross-reference this to a dataset of the weather in ottawa in 2016 in order to determine if the proportion of collision that happened in the snow is greater that genereal. 
+If take a look at the pretty much the same graph, but with the y axis being the total number of collision per month, we can see that the increase of total collision in the Jan, Feb and Dec seems to be partly due to snow. However, we would need to cross-reference this to a dataset of the weather in Ottawa in 2016 in order to determine if the proportion of collision that happened in the snow is greater that general. 
+
+On the other hand, we can redo this graph with the number of collisions on the y-axis, instead of the proportion. 
 
 ```{r}
 ggplot(df,aes(x = Month, fill=Environment)) + geom_bar() + xlab("Month") + ylab("Number of collision")
 ```
+
+When we look at this version of the plot, it looks like the number of collisions when the environment is clear is more or less consistent throughout the year and it is clear that the higher number of collisions in the winter months is due to the environment at that time of year: snow, freezing rain and drifting snow. Therefore, it could be reasonable to assume that snow and winter weather in general may lead more accidents.  
 
 #####4) Month and Impact Type
 
@@ -455,11 +459,11 @@ ggplot(df) + geom_bar(aes(Month)) +
   facet_wrap(~Impact_type, scales="free_y") + theme(axis.text.x=element_text(angle=90)) + ggtitle("Collisions by Impact Type and Month") + labs(x="Impact Type", y="Number of Collisions")
 ```
 
-From the above plots, we can see that "Sideswipe", "Turning movement", "Rear end", and "Other" types of impact happen fairly consistently throughout the year (except for "Other" types of impact in February). However, "Approaching", "SMV unattended" and "SVM" types of impact happened with a little bit more variability accross the months. Infact, in these types of collision were more frequent during witer months, which could suggest that weather and road conditions lead to these impact types. 
+From the above plots, we can see that "Sideswipe", "Turning movement", "Rear end", and "Other" types of impact happen fairly consistently throughout the year (except for "Other" types of impact in February). However, "Approaching", "SMV unattended" and "SVM" types of impact happened with a little bit more variability across the months. In fact, in these types of collision were more frequent during winter months, which could suggest that weather and road conditions lead to these impact types. 
 
 ###Other Variables
 
-We will also try to observe the relationship between other variables. 
+We will also try to observe the relationship between other non time related variables. 
 
 #####1) Impact Type and Collision Classification
 
@@ -469,7 +473,7 @@ This graph separates the collisions by classification type (fatal injury, non-fa
 ggplot(df) + geom_bar(aes(Collision_Classification, fill=Impact_type),position="fill") + ggtitle("Proportion of Collision by Classification and Impact Type") + labs(x="Collision Classification", y="Proportion of Collisions")
 ```
 
-From the graph above, we see that collisions that resulted in fatal injuries usually involved a SMV (single motor vehicle), a turning movement or an approaching vehicle. On the other hand, non-fatal and p.d only collisions were often rear end collisions. 
+From the graph above, we see that collisions that resulted in fatal injuries usually involved a SMV (slow moving vehicle), a turning movement or an approaching vehicle. On the other hand, non-fatal and p.d only collisions were often rear-end collisions. 
 
 #####2) Impact Type and Traffic_Control
 
@@ -481,6 +485,18 @@ ggplot(df) + geom_bar(aes(Impact_type)) +
 From the above graphs, it is interesting to see that rear end collisions is the most frequent impact type at roundabouts, while angle collisions are the most common form of collisions at stop signs. We may want to reflect on why this is.
 
 Also, we have to be careful in the interpretation of the pedestrian crossover graph. Since there was only one collision involving a pedestrian crossover, the fact that 100% of pedestrian crossover collisions were rear end collisions does not mean anything, since it is only based on one observation.
+
+
+To visualize the relationship between the two variables, we can also make a heatmap:
+
+```{r}
+dat <- df  %>% select(Traffic_Control, Impact_type) %>% table() %>% melt()
+colnames(dat) <- c("Traffic_Control", "Impact_type", "Value")
+dat$Rescale <- rescale(dat$Value)
+ggplot(dat, aes(Traffic_Control, Impact_type)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1)) + labs(title = "Traffic_Control vs Impact_type")
+```
+
+As mentioned previously, rear-end collisions were the most frequent types of collisions at traffic signals, but with this heatmap, we can also clearly see that when there is no type of traffic control, the impact types are a lot more varied. This is not surprising because the fact that there is not traffic structure leads to a wider range of road shenanigans a less organized road system, which could perhaps lead to more accidents.
 
 #####3) Light and Collision Classification
 
@@ -515,144 +531,13 @@ ggplot(df) + geom_bar(aes(Collision_Location, fill=Impact_type),position="fill")
 
 ```
 
-Other than the four collisions already mentioned, only the "Overpass or Bridge" location is probably worthwhile to intepret, since the other locations have less than 10 instances each, which is not sufficient to draw any conclusions. 
+Other than the four collisions already mentioned, only the "Overpass or Bridge" location is probably worthwhile to interpret, since the other locations have less than 10 instances each, which is not sufficient to draw any conclusions. 
 From the above plot, we see that rear end collisions represent about half of collisions on overpasses or bridges, while roughly 25% are SVM collisions. 
-
-#### Impact Type and Environment/Road Surface
-
-From the previous observation, it seems that there is a high number of impact of type "01 - Approaching" that occurs when it was snowing. 
-```{r}
-library(gridExtra)
-p <- ggplot(df %>% filter(Impact_type == "01 - Approaching")) 
-p1 <- p + geom_bar(aes(Impact_type, fill=Environment), position="fill") + ylab("Proportion") +
-  theme(legend.position = "left", 
-        axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank())
-p2 <- p + geom_bar(aes(Impact_type, fill = Road_Surface), position = "fill") + 
-  theme(legend.position = "right", 
-        axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.ticks.y = element_blank()) 
-grid.arrange(p1,p2, ncol=2)
-```
-```{r}
-dat <- table(df$Environment, df$Road_Surface)
-dat <- melt(dat)
-colnames(dat) <- c("Environment", "Road_Surface", "Value")
-dat$Rescale <- rescale(dat$Value)
-ggplot(dat, aes(Environment, Road_Surface)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1)) + labs(title = "Heatmap of Environment vs Road_Surface with the whole dataset")
-
-appr_only <- df %>% filter(Impact_type == "01 - Approaching")
-dat <- table(appr_only$Environment, appr_only$Road_Surface)
-dat <- melt(dat)
-colnames(dat) <- c("Environment", "Road_Surface", "Value")
-dat$Rescale <- rescale(dat$Value)
-ggplot(dat, aes(Environment, Road_Surface)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1)) + labs(title = "Heatmap of Environment vs Road_Surface \n considering only approaching impact.")
-```
-
-### Multivariate Visualizations - Maps
-
-Finally, it may be interesting to observe the interactions of more than 2 variables at a time. In this next section, multivariate visualizations will hopefully give us more information about the data. 
-
-```{r}
-#Light and impact_type by collision_classification
-ggplot(df) +geom_bar(aes(Light,
-  fill = Impact_type)) +
-  theme(legend.position="bottom",
-        axis.text.x=element_text(angle=90)) +
-  facet_wrap(~Collision_Classification, scales="free_y")
-```
-
-
-We can again plot the collisions points on a map of Ottawa, but identify the collisions more specifically with regards to their characteristics, like collision classification or time of the day or light. 
-
-#####1) Map w.r.t Light and Collision Classification
-
-```{r}
-
-ggmap(ottawa.map3)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Impact_Type), size=1) + scale_y_continuous(limits=c(45.14344,45.55)) +scale_x_continuous(limits=c(-76.2384,-75.2)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Ottawa by Impact Type")
-```
-
-This plot is interesting because we can see that a big proportion of the accidents in "rural" areas of Ottawa have SMV other collisions. This may be worth investigating in more details. 
-
-```{r}
-ggmap(ottawa.map3)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Collision_Classification), size=0.5) + scale_y_continuous(limits=c(45.14344,45.55)) +scale_x_continuous(limits=c(-76.2384,-75.2)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Ottawa by Collision Classification")
-```
-
-Obviously, most collisions are P.D only. However, we see a few fatal injury collisions that stand out in the more rural areas. It is hard to see if there are any fatal collisions closer to downtown Ottawa, therefore we will plot fatal injuries only in the next few plots. 
-
-#####2) Fatal Collisions Only
-
-Fatal collisions might be of interest, because they are the most severe and serious collisions. Here are a few plots looking at fatal collisions on the map, with various other variables of interest. 
-
-```{r}
-#Impact Type
-ggmap(ottawa.map)+ geom_point(data = data_with_lat.long %>% filter(Collision_Classification == "01 - Fatal injury"), aes(x=Longitude, y=Latitude, color=Impact_Type), size=1) + scale_y_continuous(limits=c(45.0,45.8)) +scale_x_continuous(limits=c(-76.5,-75.0)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Fatal Collisions in  Ottawa by Impact Type")
-```
-
-Plotting only the fatal collisions, we see that there were many impact types. There seems to be a higher frequency of "SMV other" impact types, as well as "Turning movement". 
-
-```{r}
-#Road Surface
-ggmap(ottawa.map)+ geom_point(data = data_with_lat.long %>% filter(Collision_Classification == "01 - Fatal injury"), aes(x=Longitude, y=Latitude, color=Road_Surface), size=1) + scale_y_continuous(limits=c(45.0,45.8)) +scale_x_continuous(limits=c(-76.5,-75.0)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Fatal Collisions in Ottawa by Road Surface")
-```
-
-The above plot demonstrates that more than half of the fatal collisions happened when the road surface was dry. When the road surface was wet, a few more fatal collisions occured.
-
-```{r}
-#Light
-ggmap(ottawa.map)+ geom_point(data = data_with_lat.long %>% filter(Collision_Classification == "01 - Fatal injury"), aes(x=Longitude, y=Latitude, color=Light), size=1) + scale_y_continuous(limits=c(45.0,45.8)) +scale_x_continuous(limits=c(-76.5,-75.0)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Fatal Collisions in Ottawa by Light type")
-```
-
-When looking at the above graph, we don't seem to see any trends when it comes to light and fatal collisions. There seems to be fatal collisions happening in the dark in more rural areas, but also in the city. 
-
-
-#####3) Collisions in Freezing Rain and Impact Type
-
-```{r}
-
-ggmap(ottawa.map.zoom)+ geom_point(data = data_with_lat.long %>% filter(Environment == "04 - Freezing Rain" ), aes(x=Longitude, y=Latitude, color=Impact_Type), size=1) + scale_y_continuous(limits=c(45.3,45.45)) +scale_x_continuous(limits=c(-75.8,-75.6)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Freezing Rain by Impact Type in Ottawa")
-
-```
-
-In terms of environment, and more specifically freezing rain, the collisions seem to be distributed roughly uniformly on the map with regards to impact type, with seemingly no interesting trend. 
-
-```{r}
-
-#Light Type
-ggmap(ottawa.map.zoomer)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Light), size=0.5) + scale_y_continuous(limits=c(45.38,45.44)) +
-  scale_x_continuous(limits=c(-75.75,-75.65)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Downtown Ottawa by Light")
-
-#Road_Surface
-ggmap(ottawa.map.zoomer)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Road_Surface), size=0.5) + scale_y_continuous(limits=c(45.38,45.44)) +
-  scale_x_continuous(limits=c(-75.75,-75.65)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Downtown Ottawa by Light")
-
-```
-
-#### Traffic Control vs Impact Type
-
-```{r}
-dat <- df  %>% select(Traffic_Control, Impact_type) %>% table() %>% melt()
-colnames(dat) <- c("Traffic_Control", "Impact_type", "Value")
-dat$Rescale <- rescale(dat$Value)
-ggplot(dat, aes(Traffic_Control, Impact_type)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1)) + labs(title = "Traffic_Control vs Impact_type")
-```
-
-```{r}
-dat <- df %>% filter(Collision_Classification == "02 - Non-fatal injury") %>% select(Traffic_Control, Impact_type) %>% table() %>% melt()
-colnames(dat) <- c("Traffic_Control", "Impact_type", "Value")
-dat$Rescale <- rescale(dat$Value)
-ggplot(dat, aes(Traffic_Control, Impact_type)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1)) + labs(title = "Traffic_Control vs Impact_type for fatal collision")
-``` 
-
 
 ### Word Map
 
-Since we have the name of each street/intersection of where each collision has happened, we can try to do some word cloud map to see which road came up more often. 
+Since we have the name of each street/intersection of where each collision happened, we can try to do some word cloud map to see which road comes up more often. 
+
 ```{r}
 library("tm")
 library("wordcloud")
@@ -671,11 +556,12 @@ wordcloud(words = d$word, freq = d$freq, min.freq = 1,
           max.words=200, random.order=FALSE, rot.per=0.35, 
           colors=brewer.pal(8, "Dark2"))
 ```
-From this, we can see that the most used word is btwn, which doesn't gives much more insight other than how the collision are reported. But, we can also see that word like ave, blvd, highway are frequent, telling us that more collision were reported on those type of road.
+From this, we can see that the most used word is btwn, which doesn't give much more insight other than how the collision are reported. This between is probably the most frequent word because many accidents were probably reported as having happened "between" two specific roads. Although, we can also see that words like ave, blvd, and highway are frequent, telling us that more collision were reported on those type of road.
 
-We could try to remove some popular road type name, in order to get a word cloud containing only the road name.
+We could try to remove some popular road type name, in order to get a word cloud containing mostly road names.
+
 ```{r}
-docs_road <- tm_map(docs, removeWords, c("ave", "btwn", "blvd", "pkwy", "highway", "st."))
+docs_road <- tm_map(docs, removeWords, c("ave", "btwn", "blvd", "pkwy", "highway", "st.", "cres", "way", "lane", "line"))
 dtm <- TermDocumentMatrix(docs_road)
 m <- as.matrix(dtm)
 v <- sort(rowSums(m),decreasing=TRUE)
@@ -686,67 +572,154 @@ wordcloud(words = d$word, freq = d$freq, min.freq = 1,
           colors=brewer.pal(8, "Dark2"))
 ```
 
-What is interesting here is that that road name that came up more are the same that have a high collision density on the previous map plot.
+When we take out the unnecessary words, we see that the road names that come up more are the ones that we expect to see, such as Highway 417, Carling Ave, Bronson Ave, Innes, and Riverside. They are all very frequently and highly travelled roads, thus it is not surprising that they have a higher frequency of accidents than less popular or travelled roads. Therefore, this road map coincides with what we observed on the maps, and what we would deduce from our general knowledge of Ottawa roads. 
+
+
+### Multivariate Visualizations
+
+Finally, it may be interesting to observe the interactions of more than 2 variables at a time. In this next section, multivariate visualizations will hopefully give us interesting information about the data. 
+
+#### Collision Classification and Light Type by Impact Type 
+
+To start off, we can check if there seems to be trends regarding impact type and light, depending on the severity of the collision.
+
+```{r}
+#Light and impact_type by collision_classification
+ggplot(df) +geom_bar(aes(Light,
+  fill = Impact_type)) +
+  theme(legend.position="bottom",
+        axis.text.x=element_text(angle=90)) +
+  facet_wrap(~Collision_Classification, scales="free_y")
+```
+
+As we have previously seen, almost all collisions happened during the daylight hours, or when it was dark outside. However, while keeping in mind that the number of fatal collisions in small, it is interesting to observe that when it is dark outside, approaching and other types of collisions were more frequent, but turning movement, rear end and sideswipe collisions were more frequent in the daylight. 
+Furthermore, for non-fatal injury and property damage only collisions, the distribution of impact types for collisions in the dark was fairly similar, while the proportion of collisions in the daylight in the form of turning movement was higher for collisions involving non-fatal injuries, while the proportion of sideswipe collisions was higher for the p.d. only collisions in the daylight. 
+
+
+#### Impact Type by Environment and Road Surface
+
+We may wonder if a specific type of impact is prone to happening in different weather conditions, therefore plotting the collisions by impact type for different environment and road conditions may be a good idea. 
+
+```{r}
+#Impact_type by environement and road surface
+ggplot(df) +geom_bar(aes(Road_Surface,
+  fill = Environment)) +
+  theme(legend.position="bottom",
+        axis.text.x=element_text(angle=90)) +
+  facet_wrap(~Impact_type, scales="free_y")
+```
+
+Again, as mentioned before, dry road conditions have the highest frequency of accidents, no matter the impact type, but this is to be expected. Wet road conditions (due to rain) and loose snow (due to snow) are usually the runner ups in terms of road surface considered to have a higher frequency of accidents, and this is true across almost all impact types. However, there were more collisions of the type approaching occurred when the road conditions were snowy or icy than when the roads were dry. This is maybe worth investigating in more details, since we do not see such a trend for other impact types. 
+
+#### Impact Type by Environment and Road Surface for Approaching Collisions
+
+From the previous observations, it seems that there is a high number of impact of type "01 - Approaching" that occurred when it was snowing or when it was icy. We can get a better picture of this with the following graph :
+
+```{r}
+library(gridExtra)
+p <- ggplot(df %>% filter(Impact_type == "01 - Approaching")) 
+p1 <- p + geom_bar(aes(Impact_type, fill=Environment), position="fill") + ylab("Proportion") +
+  theme(legend.position = "left", 
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+p2 <- p + geom_bar(aes(Impact_type, fill = Road_Surface), position = "fill") + 
+  theme(legend.position = "right", 
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank()) 
+grid.arrange(p1,p2, ncol=2)
+```
+
+It is clear that more than half of the collisions of type approaching happened when the road was wet, snowy or icy. This correlates with the fact that during half of all the approaching type of collisions, it was snowing or raining. Therefore, we may want to investigate these approaching types of collisions in winter specifically, since all these observations seem to indicate that maybe these types of collisions are more susceptible to happening in the winter weather. 
+
+Another way to observe this relationship between approaching collisions and winter weather/conditions is with a heat map:
+
+```{r}
+appr_only <- df %>% filter(Impact_type == "01 - Approaching")
+dat <- table(appr_only$Environment, appr_only$Road_Surface)
+dat <- melt(dat)
+colnames(dat) <- c("Environment", "Road_Surface", "Value")
+dat$Rescale <- rescale(dat$Value)
+ggplot(dat, aes(Environment, Road_Surface)) + geom_tile(aes(fill = Rescale), color = "white") + scale_fill_gradient(low="white", high = "steelblue") + theme(axis.text.x = element_text(angle = 20, hjust = 1)) + labs(title = "Heatmap of Environment vs Road Surface \n considering only approaching impact.")
+```
+
+Again here, we can see that snow seems to be an important factor in approaching types of collisions. 
+
+
+####Map Visualizations
+
+We can again plot the collisions points on a map of Ottawa, but identify the collisions more specifically with regards to their characteristics, like collision classification or time of the day or light. 
+
+#####1) Map with regards to Impact Type
+
+```{r}
+
+ggmap(ottawa.map3)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Impact_Type), size=1) + scale_y_continuous(limits=c(45.14344,45.55)) +scale_x_continuous(limits=c(-76.2384,-75.2)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Ottawa by Impact Type")
+```
+
+This plot is interesting because we can see that a big proportion of the accidents in "rural" areas of Ottawa have SMV other collisions. This is interesting but not entirely surprising, since there are probably more slow moving vehicle outside big city centres, such as farm vehicles. Still, the amount of purple in rural areas could be concerning, and we may want to address that in further analysis.
+
+#####2) Map with regards to Collision Classification
+
+Next, locating fatal collisions, non-fatal injury collisions and p.d only collisions on the map may give us more information as to where certain types of collisions are more common. 
+
+```{r}
+ggmap(ottawa.map3)+ geom_point(data = data_with_lat.long, aes(x=Longitude, y=Latitude, color=Collision_Classification), size=0.5) + scale_y_continuous(limits=c(45.14344,45.55)) +scale_x_continuous(limits=c(-76.2384,-75.2)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Ottawa by Collision Classification")
+```
+
+Obviously, most collisions are P.D only. However, we see a few fatal injury collisions that stand out in the more rural areas. It is hard to see if there are any fatal collisions closer to downtown Ottawa, therefore we will plot fatal injuries only in the next few plots. 
+
+#####3) Fatal Collisions Only
+
+Fatal collisions might be of interest, because they are the most severe and serious collisions. Here are a few plots looking at fatal collisions on the map, with various other variables of interest. 
+
+```{r}
+#Impact Type
+ggmap(ottawa.map)+ geom_point(data = data_with_lat.long %>% filter(Collision_Classification == "01 - Fatal injury"), aes(x=Longitude, y=Latitude, color=Impact_Type), size=1) + scale_y_continuous(limits=c(45.0,45.8)) +scale_x_continuous(limits=c(-76.5,-75.0)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Fatal Collisions in  Ottawa by Impact Type")
+```
+
+Plotting only the fatal collisions, we see that they seem to be spread out randomly and without a clear trend across the city. Also, there were many impact types, but there seems to be a higher frequency of "SMV other" impact types, as well as "Turning movement". 
+
+Let's now look at the road surface of fatal collisions:
+
+```{r}
+#Road Surface
+ggmap(ottawa.map)+ geom_point(data = data_with_lat.long %>% filter(Collision_Classification == "01 - Fatal injury"), aes(x=Longitude, y=Latitude, color=Road_Surface), size=2) + scale_y_continuous(limits=c(45.0,45.8)) +scale_x_continuous(limits=c(-76.5,-75.0)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Fatal Collisions in Ottawa by Road Surface")
+```
+
+The above plot demonstrates that more than half of the fatal collisions happened when the road surface was dry, and a lot of these happened outside city centres. Most of the accidents that occurred when the road was wet took place in the city or in suburban areas.
+
+#####4) Collisions in Freezing Rain and Impact Type
+
+Since Freezing Rain is not unheard of during the winter in Ottawa, it can be interesting to determine if any impact types are more frequent in certain areas of the city when it is freezing rain. 
+
+```{r}
+
+ggmap(ottawa.map.zoom)+ geom_point(data = data_with_lat.long %>% filter(Environment == "04 - Freezing Rain" ), aes(x=Longitude, y=Latitude, color=Impact_Type), size=2) + scale_y_continuous(limits=c(45.3,45.45)) +scale_x_continuous(limits=c(-75.8,-75.6)) + labs(x="Longitude", y="Latitude")+ ggtitle("2016 Collisions in Freezing Rain by Impact Type in Ottawa")
+
+```
+
+In terms of environment, and more specifically when it is freezing rain, the collisions seem to be distributed roughly uniformly on the map with regards to impact type, with seemingly no interesting trend. 
 
 ### Riverplot
+
+Finally, the following riverplots allow us to visualize the data in a different way. 
+
 ```{r}
 library(riverplot)
 library(RColorBrewer)
 ```
 
-```{r}
-v1 <- df$Environment
-v2 <- df$Road_Surface
+####Non-Fatal Injury Collisions and Impact Type
 
-from_label <- str_extract(levels(v1),"([a-zA-Z]+)( ?)([a-zA-Z]+)")
-to_label <- str_extract(levels(v2),"([a-zA-Z]+)( ?)([a-zA-Z]+)")
-
-levels(v1) <- paste("E - ",from_label)
-levels(v2) <- paste("R - ",to_label)
-
-edges <- as.data.frame(table(v1, v2))
-colnames(edges) <- c("N1", "N2", "Value")
-nodes <- data.frame(ID = c(levels(v1), levels(v2)), x = c(rep(1,9),rep(2,10)))
-palette = paste0(brewer.pal(2, "Set2"))
-styles <- lapply(c(rep(1,9),rep(2,10)), function(n) {
-  list(col = palette[n+1])
-})
-names(styles) = nodes$ID
-r <- makeRiver(nodes, edges, node_styles = styles)
-plot(r, srt=0, lty=0, node_margin = 0.1, plot_area = 1,fix.pdf = T)
-```
-
-```{r}
-v2 <- as.factor(df$Collision_Classification)
-v1 <- as.factor(df$Impact_type)
-
-#from_label <- str_extract(levels(v1),"([a-zA-Z]+)( ?)([a-zA-Z]+)")
-#to_label <- str_extract(levels(v2),"([a-zA-Z]+)( ?)([a-zA-Z]+)")
-
-#levels(v1) <- paste(from_label)
-#levels(v2) <- paste(to_label)
-
-edges <- as.data.frame(table(v1, v2))
-colnames(edges) <- c("N1", "N2", "Value")
-nodes <- data.frame(
-  ID = c(levels(v1), levels(v2)), 
-  x = c(rep(1,length(levels(v1))),rep(2,length(levels(v2))))
-)
-
-palette = paste0(brewer.pal(9, "Set3"))
-styles <- lapply(
-  c(1:8,1:3), 
-  function(n) {
-    list(col = palette[n+1])
-  })
-
-names(styles) = nodes$ID
-r <- makeRiver(nodes, edges, node_styles = styles)
-plot(r, srt=0, lty=0, node_margin = 0.1, plot_area = 1,fix.pdf = T)
-```
+We have not yet focused on the non-fatal injury types of collisions, therefore the next visualization yields information on these kinds of collisions and their impact types. 
 
 ```{r echo=TRUE}
-fatal_only <- df[which(df$Collision_Classification == "01 - Fatal injury"),]
+fatal_only <- df[which(df$Collision_Classification == "02 - Non-fatal injury"),]
 fatal_only$Collision_Classification <- droplevels(fatal_only$Collision_Classification)
 v2 <- fatal_only$Collision_Classification
 v1 <- as.factor(fatal_only$Impact_type)
@@ -776,8 +749,15 @@ r <- makeRiver(nodes, edges, node_styles = styles)
 plot(r, srt=0, lty=0,node_margin = 0.1, plot_area = 1,fix.pdf = T)
 ```
 
+This river plot clearly indicates that SMV other, rear end, turning movement and angle collision types are the most frequent impact types for collisions with non fatal injuries. 
+
+
+####Turning Movement with Environment and Road_Surface
+
+The next river plot focuses on the turning movement collisions, since in previous plots, we have seen that they sometimes lead to fatal and non-fatal injuries. Therefore, we may want to see if there is some type of environment or road surface that is more frequently observed with this type of impact.
+
 ```{r}
-appr_only <- df %>% filter(Impact_type == "01 - Approaching")
+appr_only <- df %>% filter(Impact_type == "05 - Turning movement")
 v2 <- as.factor(appr_only$Environment)
 v1 <- as.factor(appr_only$Road_Surface)
 
@@ -805,4 +785,20 @@ names(styles) = nodes$ID
 r <- makeRiver(nodes, edges, node_styles = styles)
 plot(r, srt=0, lty=0, node_margin = 0.1, plot_area = 1,fix.pdf = T)
 ```
+ 
+ The above plot indicates that a large portion of turning movement collisions happen when it is dry and clear. Although, it is interesting to see that a wet road and rain are more frequent conditions for this type of impact. This may be due to the fact that drivers are generally more cautious in snowy conditions, and maybe underestimate the effect of a wet road and rain. 
+ 
+ 
+###Conclusion
+
+Finally, after exploring the dataset, we are better equipped to determine if this dataset is trustworthy. 
+
+In general, this dataset seems to be trustworthy. There doesn't seem to be too many missing values, and the few missing values seem to be missing at random. In general, these missing values do not seem to have a big impact on the dataset, therefore further analysis is probably possible, if imputation methods are used to fill in the missing values, or if they are disregarded completely. Also, there are some data entry errors, as some values were not entered in the same format as the rest (ex. a few X and Y coordinates, a few time values, etc.). However, datasets are rarely perfect, and this one is no exception, but the few problems with it do not warrant it unusable. 
+
+Depending on the needs and the questions that we want to answer, this data can be useful.
+For instance, since we have the geographic locations of all the collisions, we could compare different areas of Ottawa to see if certain roads/regions/neighbourhoods seem to be particularly more dangerous in terms of collisions. 
+We also determined that roads with no traffic control have a variety of different types of impact. Further investigation into this issue may prove useful in the way that we could maybe determine areas that would benefit from having some type of traffic control (ex. adding some stop signs, lights, etc. on some specific roads that don't already have these traffic controls). 
+This dataset is also useful in gathering information related to fatal collisions, and maybe the analysis of this data could lead to new discoveries or implementations that will reduce the number of fatal collisions in the years to come. 
+
+Thus, this dataset is a decent one, from which we can gather some information that could possibly save lives or at least limit the number of accidents that could be avoided with some small changes to road maintenance or traffic control. 
  
